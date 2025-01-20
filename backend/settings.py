@@ -21,7 +21,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 
-ALLOWED_HOSTS = ['blogologybackend.onrender.com']
+ALLOWED_HOSTS = ['blogologybackend.onrender.com','blogology.netlify.app']
 
 
 # Application definition
