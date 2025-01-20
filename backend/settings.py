@@ -20,7 +20,8 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(" ")
 
 
 # Application definition
@@ -125,8 +126,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'user.CustomUser'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Local frontend
-    "https://blogology.netlify.app",  # Production frontend
+    "http://localhost:5173",
+    "https://blogology.netlify.app"
+     
 ]
 
 
@@ -191,4 +193,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = "https://blogology.netlify.app"
+
+CSRF_TRUSTED_ORIGINS = ['https://your-app-name.onrender.com']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+X_FRAME_OPTIONS = 'DENY'
