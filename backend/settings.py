@@ -20,7 +20,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
-ALLOWED_HOSTS = ['blogologybackend.onrender.com','blogology.netlify.app']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -191,4 +191,4 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 
-FRONTEND_URL = "blogology.netlify.app"
+FRONTEND_URL = "http://localhost:5173"
