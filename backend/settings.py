@@ -195,7 +195,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 FRONTEND_URL = "https://blogology.netlify.app"
 
-CSRF_TRUSTED_ORIGINS = ['https://blogologybackend.onrender.com/']
+CSRF_TRUSTED_ORIGINS = ['https://blogology.netlify.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
