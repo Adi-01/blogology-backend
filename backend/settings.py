@@ -205,5 +205,6 @@ X_FRAME_OPTIONS = 'DENY'
 
 STATIC_URL = '/static/'
 
-# Render's static file handling (make sure to update this for your project)
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Directory for collected static files
+# WhiteNoise settings
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
