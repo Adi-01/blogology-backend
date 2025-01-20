@@ -20,7 +20,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
-ALLOWED_HOSTS = ['https://blogologybackend.onrender.com']
+ALLOWED_HOSTS = ['blogologybackend.onrender.com','blogology.netlify.app/']
 
 
 # Application definition
@@ -126,7 +126,7 @@ AUTH_USER_MODEL = 'user.CustomUser'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Local frontend
-    "https://your-production-frontend.com",  # Production frontend
+    "https://blogology.netlify.app",  # Production frontend
 ]
 
 
