@@ -1,0 +1,24 @@
+# Ignore environment files
+.env
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment folder
+projectenv/
+venv/
+.venv/
+env/
+.env/
+
+# Django static files (if you don't need them in version control)
+/static/
+
+# Other temporary files
+*.log
+*.sqlite3
+*.bak
+.DS_Store
