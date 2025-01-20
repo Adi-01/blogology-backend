@@ -21,7 +21,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS')
+ALLOWED_HOSTS = list(config('ALLOWED_HOSTS'))
 
 
 # Application definition
