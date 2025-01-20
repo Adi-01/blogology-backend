@@ -21,7 +21,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 
-ALLOWED_HOSTS = list(config('ALLOWED_HOSTS'))
+ALLOWED_HOSTS = ['blogologybackend.onrender.com']
 
 
 # Application definition
