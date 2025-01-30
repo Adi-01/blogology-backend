@@ -3,6 +3,10 @@ from pathlib import Path
 import os
 from datetime import timedelta
 from decouple import config
+from dotenv import load_dotenv
+from urllib.parse import urlparse
+
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,7 +25,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 
-ALLOWED_HOSTS = ['blogologybackend.onrender.com','blogology.netlify.app']
+ALLOWED_HOSTS = ['blogologybackend.onrender.com','blogology.netlify.app','127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -75,11 +79,22 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': dj_database_url.config(default=config('DATABASE_URL'))
+# }
+
+tmpPostgres = urlparse(config("DATABASE_URL"))
+
 DATABASES = {
-    'default': dj_database_url.config(default=config('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': tmpPostgres.path.replace('/', ''),
+        'USER': tmpPostgres.username,
+        'PASSWORD': tmpPostgres.password,
+        'HOST': tmpPostgres.hostname,
+        'PORT': 5432,
+    }
 }
-
-
     
 
 
@@ -194,16 +209,13 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 
-FRONTEND_URL = "https://blogology.netlify.app"
+FRONTEND_URL = "https://blogology.netlify.app/"
 
 CSRF_TRUSTED_ORIGINS = ['https://blogology.netlify.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = 'DENY'
-
-# settings.py
-
 STATIC_URL = '/static/'
 
 # WhiteNoise settings

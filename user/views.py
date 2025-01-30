@@ -68,7 +68,7 @@ def request_password_reset(request):
         token = default_token_generator.make_token(user)
 
         # Create the frontend reset password URL
-        reset_link = f"{settings.FRONTEND_URL}/reset-your-password?token={token}&email={email}"
+        reset_link = f"{settings.FRONTEND_URL}reset-your-password?token={token}&email={email}"
 
         try:
             # Send the email using Gmail
