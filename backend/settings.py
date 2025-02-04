@@ -1,4 +1,3 @@
-import dj_database_url
 from pathlib import Path
 import os
 from datetime import timedelta
@@ -210,6 +209,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 
 FRONTEND_URL = "https://blogology.netlify.app/"
+#FRONTEND_URL = "http://localhost:5173/"
 
 CSRF_TRUSTED_ORIGINS = ['https://blogology.netlify.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

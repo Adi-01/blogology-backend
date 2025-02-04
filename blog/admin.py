@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post
+from .models import Post, Comment
 from django.utils.html import format_html
 
 
@@ -16,3 +16,9 @@ class PostAdmin(admin.ModelAdmin):
         return format_html(f'<img src="{obj.image_url}" width="150" height="75" />')
     image_url_preview.short_description = "Image Preview"
 
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'content', 'date_posted','id')
+    list_filter = ('date_posted', 'author')
+    search_fields = ('post__title', 'author__username')
+    ordering = ('-date_posted',)
