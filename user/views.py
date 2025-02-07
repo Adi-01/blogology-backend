@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
-from rest_framework.decorators import api_view,permission_classes,authentication_classes
+from rest_framework.decorators import api_view,permission_classes
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
@@ -146,18 +147,20 @@ def update_user_profile(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
-@authentication_classes([])
-@permission_classes([AllowAny])  # 🚨 Anyone can access this, even unauthenticated users!
+@permission_classes([IsAuthenticated])
 def get_specific_user_profile(request, user_id):
     """
-    Retrieve a specific user's profile.
+    Retrieve a specific user's profile. 
+    - ❌ Unauthenticated users get a 401 error.
+    - ✅ Authenticated users can view profiles.
     """
     try:
-        user = CustomUser.objects.get(pk=user_id)  
+        user = CustomUser.objects.get(pk=user_id)
     except CustomUser.DoesNotExist:
         return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = UserProfileSerializer(user, context={'request': request})  # ✅ Pass request here!
+    serializer = UserProfileSerializer(user, context={'request': request})  # ✅ Pass request for is_following
+
     return Response(serializer.data)
 
 
