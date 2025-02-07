@@ -46,6 +46,10 @@ class CustomUser(AbstractUser):
         default="About me has not been written yet."
     )
 
+    followers = models.ManyToManyField('self', symmetrical=False, related_name='following', blank=True)
+    
+
+
     def clean(self):
         super().clean()
         validate_password(self.password)

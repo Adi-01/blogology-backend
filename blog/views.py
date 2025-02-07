@@ -58,6 +58,15 @@ def get_user_posts(request):
     serializer = PostSerializer(posts, many=True, context={"request": request})
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_posts_by_user(request, user_id):
+    """
+    Retrieve all posts by a specific user.
+    """
+    posts = Post.objects.filter(author__id=user_id)
+    serializer = PostSerializer(posts, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
@@ -115,9 +124,6 @@ def add_comment(request, pk):
     data['post'] = pk
     data['author'] = request.user.id
     
-
-    print("Logged-in user: ", request.user)  # Debug print
-    print("Data being passed to serializer:", data)  # Debug print
 
     serializer = CommentSerializer(data=data, context={'request': request})
 

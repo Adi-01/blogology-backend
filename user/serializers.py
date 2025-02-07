@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError , ObjectDoesNotExist
 from .models import CustomUser, validate_password
-
+from blog.serializers import PostSerializer
 
 def validate_email_uniqueness(value, instance=None):
     try:
@@ -47,16 +47,50 @@ class UserSerializer(serializers.ModelSerializer):
 #User Profile Serializer
 class UserProfileSerializer(serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(read_only=True)
+    post_count = serializers.SerializerMethodField(read_only=True)
+    posts = PostSerializer(many=True, read_only=True)
+    followers_count = serializers.SerializerMethodField(read_only=True)
+    followers_list = serializers.SerializerMethodField(read_only=True)
+    is_following = serializers.SerializerMethodField(read_only=True)
+
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'image', 'date_joined','about_me']
+        fields = ['id', 'username', 'email', 'image', 'date_joined','about_me', 'post_count', 'posts', 'followers_count', 'followers_list', 'is_following']
         extra_kwargs = {
             'about_me': {'read_only': True},
         }
+        
+    def get_post_count(self, obj):
+        return obj.posts.count()
+    
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+    
+
+    def get_followers_list(self, obj):
+        return [f.username for f in obj.followers.all()]
+    
+    def get_is_following(self, obj):
+        request = self.context.get('request', None)
+        if not request or not hasattr(request, 'user'):
+            return False  # 🚨 Skip if no request
+        
+        user = request.user
+        if user.is_anonymous:  # 🔥 Handle AnonymousUser
+            return False
+
+        if user == obj:
+            return False
+
+        
+        return user in obj.followers.all()
+
+
 
 #User Profile Update Serializer
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = CustomUser
         fields = ['username', 'email', 'image','about_me']

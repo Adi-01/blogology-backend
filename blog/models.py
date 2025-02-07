@@ -4,7 +4,7 @@ from user.models import CustomUser
 class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
-    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)  
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="posts")  
     date_posted = models.DateField()
     image_url = models.URLField(default='https://via.placeholder.com/300x150')
 

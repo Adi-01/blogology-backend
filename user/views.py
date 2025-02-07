@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from rest_framework.decorators import api_view,permission_classes
+from rest_framework.decorators import api_view,permission_classes,authentication_classes
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
@@ -12,7 +12,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser
-
+from django.shortcuts import get_object_or_404
 
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
@@ -44,7 +44,7 @@ def login_user(request):
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     """Fetch the profile details of the authenticated user."""
-    serializer = UserProfileSerializer(request.user)
+    serializer = UserProfileSerializer(request.user, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -144,3 +144,62 @@ def update_user_profile(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])  # 🚨 Anyone can access this, even unauthenticated users!
+def get_specific_user_profile(request, user_id):
+    """
+    Retrieve a specific user's profile.
+    """
+    try:
+        user = CustomUser.objects.get(pk=user_id)  
+    except CustomUser.DoesNotExist:
+        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = UserProfileSerializer(user, context={'request': request})  # ✅ Pass request here!
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def follow_user(request, user_id):
+    user_to_follow = get_object_or_404(CustomUser, id=user_id)
+    current_user = request.user
+
+    if user_to_follow == current_user:
+        return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if current_user in user_to_follow.followers.all():
+        return Response({"detail": "You are already following this user."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_to_follow.followers.add(current_user)
+
+    return Response({
+        "detail": f"You are now following {user_to_follow.username}.",
+        "is_following": True,  # ✅ Send updated state
+        "followers_count": user_to_follow.followers.count()  # ✅ Send updated count
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unfollow_user(request, user_id):
+    user_to_unfollow = get_object_or_404(CustomUser, id=user_id)
+    current_user = request.user
+
+    if user_to_unfollow == current_user:
+        return Response({"detail": "You cannot unfollow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if current_user not in user_to_unfollow.followers.all():
+        return Response({"detail": "You are not following this user."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_to_unfollow.followers.remove(current_user)
+
+    return Response({
+        "detail": f"You have unfollowed {user_to_unfollow.username}.",
+        "is_following": False,  # ✅ Send updated state
+        "followers_count": user_to_unfollow.followers.count()  # ✅ Send updated count
+    }, status=status.HTTP_200_OK)
+
+

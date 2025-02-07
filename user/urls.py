@@ -10,4 +10,7 @@ urlpatterns = [
     path('request-password-reset/', request_password_reset, name='request_password_reset'),
     path('reset-password/', reset_password, name='reset_password'),
     path('update-profile/', update_user_profile, name='update_user_profile'),
+    path('profile/<int:user_id>/', get_specific_user_profile, name='get_specific_user_profile'),
+    path('follow/<int:user_id>/', follow_user, name='follow_user'),
+    path('unfollow/<int:user_id>/', unfollow_user, name='unfollow_user'),
 ]
