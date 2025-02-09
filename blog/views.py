@@ -5,6 +5,7 @@ from rest_framework import status
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 from django.utils import timezone
+from django.core.cache import cache
 
 
 @api_view(['GET'])
@@ -13,7 +14,13 @@ def post_list(request):
     """
     List all posts.
     """
-    posts = Post.objects.all()
+    cache_key = 'post_list'  # Define a cache key for the list of posts
+    posts = cache.get(cache_key)  # Try to get the cached data
+    
+    if not posts:  # If not cached, fetch from the database
+        posts = Post.objects.all()
+        cache.set(cache_key, posts, timeout=60 * 15)  # Cache for 15 minutes
+    
     serializer = PostSerializer(posts, many=True)
     return Response(serializer.data)
 
@@ -24,10 +31,15 @@ def post_detail(request, pk):
     """
     Retrieve a specific post.
     """
-    try:
-        post = Post.objects.get(pk=pk)
-    except Post.DoesNotExist:
-        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    cache_key = f'post_detail_{pk}'  # Define a cache key for the specific post
+    post = cache.get(cache_key)  # Try to get the cached data
+    
+    if not post:  # If not cached, fetch from the database
+        try:
+            post = Post.objects.get(pk=pk)
+            cache.set(cache_key, post, timeout=60 * 15)  # Cache for 15 minutes
+        except Post.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
     
     serializer = PostSerializer(post)
     return Response(serializer.data)
@@ -45,69 +57,11 @@ def create_post(request):
     
     if serializer.is_valid():
         serializer.save()
+        cache.delete('post_list')
         return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return the post data with the author info
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_user_posts(request):
-    user = request.user
-    posts = Post.objects.filter(author=user)
-    serializer = PostSerializer(posts, many=True, context={"request": request})
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_posts_by_user(request, user_id):
-    """
-    Retrieve all posts by a specific user.
-    """
-    posts = Post.objects.filter(author__id=user_id)
-    serializer = PostSerializer(posts, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET', 'PUT'])
-@permission_classes([IsAuthenticated])
-def edit_post(request, pk):
-    try:
-        post = Post.objects.get(pk=pk)
-    except Post.DoesNotExist:
-        return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Ensure the logged-in user is the author of the post
-    if post.author != request.user:
-        return Response({"detail": "You can only edit your own posts."}, status=status.HTTP_403_FORBIDDEN)
-
-    if request.method == 'GET':
-        # Return the post data for editing if it's a GET request
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
-
-    if request.method == 'PUT':
-        # Handle the PUT request to update the post
-        serializer = PostSerializer(post, data=request.data, partial=True)  # partial=True allows partial updates
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_post(request, pk):
-    try:
-        post = Post.objects.get(pk=pk)
-    except Post.DoesNotExist:
-        return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Ensure the logged-in user is the author of the post
-    if post.author != request.user:
-        return Response({"detail": "You can only delete your own posts."}, status=status.HTTP_403_FORBIDDEN)
-
-    post.delete()
-    return Response({"detail": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -147,3 +101,63 @@ def delete_comment(request, comment_id):
 
     comment.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def edit_post(request, pk):
+    cache_key = f'post_detail_{pk}'  # Define a cache key for the specific post
+
+    if request.method == 'GET':
+        # Try to get the cached post
+        post = cache.get(cache_key)
+        
+        if not post:  # If not cached, fetch from the database
+            try:
+                post = Post.objects.get(pk=pk)
+                cache.set(cache_key, post, timeout=60 * 15)  # Cache for 15 minutes
+            except Post.DoesNotExist:
+                return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
+
+    if request.method == 'PUT':
+        # Handle the PUT request to update the post
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Ensure the logged-in user is the author of the post
+        if post.author != request.user:
+            return Response({"detail": "You can only edit your own posts."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = PostSerializer(post, data=request.data, partial=True)  # partial=True allows partial updates
+        if serializer.is_valid():
+            serializer.save()
+            # Invalidate the cache for the post
+            cache.delete(cache_key)  # Remove the cached post
+            cache.delete('post_list')
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_post(request, pk):
+    cache_key = f'post_detail_{pk}'  # Define a cache key for the specific post
+
+    try:
+        post = Post.objects.get(pk=pk)
+    except Post.DoesNotExist:
+        return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Ensure the logged-in user is the author of the post
+    if post.author != request.user:
+        return Response({"detail": "You can only delete your own posts."}, status=status.HTTP_403_FORBIDDEN)
+
+    post.delete()
+    # Invalidate the cache for the post
+    cache.delete(cache_key)  # Remove the cached post
+    cache.delete('post_list')
+    return Response({"detail": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

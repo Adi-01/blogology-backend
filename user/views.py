@@ -1,6 +1,4 @@
-from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view,permission_classes
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
@@ -14,6 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
@@ -45,8 +44,14 @@ def login_user(request):
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     """Fetch the profile details of the authenticated user."""
-    serializer = UserProfileSerializer(request.user, context={'request': request})
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    cache_key = f'user_profile_{request.user.id}'
+    profile = cache.get(cache_key)  # Try to get the cached profile
+    
+    if not profile:  # If not cached, fetch from the database
+        profile = UserProfileSerializer(request.user, context={'request': request}).data
+        cache.set(cache_key, profile, timeout=60 * 15)  # Cache for 15 minutes
+    
+    return Response(profile, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -126,16 +131,19 @@ def reset_password(request):
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def update_user_profile(request):
-    """
-    Retrieve or update the authenticated user's profile (username, email, image).
-    """
-
+    """Retrieve or update the authenticated user's profile (username, email, image)."""
     user = request.user
 
     # Handle GET request to retrieve the user's profile data
     if request.method == 'GET':
-        serializer = UserProfileUpdateSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        cache_key = f'user_profile_{user.id}'
+        profile = cache.get(cache_key)  # Try to get the cached profile
+        
+        if not profile:  # If not cached, fetch from the database
+            profile = UserProfileSerializer(user, context={'request': request}).data
+            cache.set(cache_key, profile, timeout=60 * 15)  # Cache for 15 minutes
+        
+        return Response(profile, status=status.HTTP_200_OK)
 
     # Handle PATCH request to update the user's profile data
     elif request.method == 'PATCH':
@@ -143,25 +151,32 @@ def update_user_profile(request):
         
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # Invalidate the cache for the user's profile
+            cache_key = f'user_profile_{user.id}'
+            cache.delete(cache_key)  # Remove the cached profile
+            
+            # Optionally, you can return the updated profile data
+            updated_profile = UserProfileSerializer(user, context={'request': request}).data
+            return Response(updated_profile, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_specific_user_profile(request, user_id):
-    """
-    Retrieve a specific user's profile. 
-    - ❌ Unauthenticated users get a 401 error.
-    - ✅ Authenticated users can view profiles.
-    """
-    try:
-        user = CustomUser.objects.get(pk=user_id)
-    except CustomUser.DoesNotExist:
-        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = UserProfileSerializer(user, context={'request': request})  # ✅ Pass request for is_following
-
-    return Response(serializer.data)
+    """Retrieve a specific user's profile."""
+    cache_key = f'user_profile_{user_id}'
+    profile = cache.get(cache_key)  # Try to get the cached profile
+    
+    if not profile:  # If not cached, fetch from the database
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            profile = UserProfileSerializer(user, context={'request': request}).data
+            cache.set(cache_key, profile, timeout=60 * 15)  # Cache for 15 minutes
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    return Response(profile, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
