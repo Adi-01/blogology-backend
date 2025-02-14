@@ -1,4 +1,11 @@
 <h1>Blogology Backend</h1> 
+<p>
+    <img src="https://img.shields.io/badge/Backend-Django-green?logo=django" alt="Django Badge">
+    <img src="https://img.shields.io/badge/API-DRF-red?logo=django" alt="DRF Badge">
+    <img src="https://img.shields.io/badge/Auth-JWT-blue?logo=jwt" alt="JWT Badge">
+    <img src="https://img.shields.io/badge/Database-PostgreSQL-blue?logo=postgresql" alt="PostgreSQL Badge">
+    <img src="https://img.shields.io/badge/Deployment-Render-purple?logo=render" alt="Render Badge">
+</p>
 <p>The backend for Blogology, built using Django and Django Rest Framework. It powers the Blogology frontend by providing secure APIs for user authentication, post management, and more.</p>
 <br>
 
