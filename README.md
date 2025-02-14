@@ -39,6 +39,7 @@
     <li>Enhanced data security by implementing role-based access control, preventing unauthorized actions by 100%.</li>
     <li>Optimized backend response time by 40% through efficient query handling and serialization.</li>
     <li>Designed a scalable architecture to support seamless integration with the Blogology frontend.</li>
+    <li>Implemented caching mechanisms to accelerate post loading times, enhancing user experience with faster content delivery.</li>
 </ul>
 <br>
 
