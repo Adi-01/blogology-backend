@@ -7,11 +7,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser
 from django.shortcuts import get_object_or_404
+import random
+from django.core.cache import cache
 
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
@@ -194,4 +195,51 @@ def unfollow_user(request, user_id):
         "followers_count": user_to_unfollow.followers.count()  # ✅ Send updated count
     }, status=status.HTTP_200_OK)
 
+#OTP verification for registering
+def generate_otp():
+    return str(random.randint(100000,999999))
 
+# API to send OTP
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def send_otp(request):
+    email = request.data.get("email")
+
+    if not email:
+        return Response({"error": "Email is required"}, status=400)
+
+    # Check if email is already registered
+    if CustomUser.objects.filter(email=email).exists():
+        return Response({"error": "Email is already registered"}, status=400)
+
+    otp = generate_otp()  # Generate OTP
+    cache.set(f"otp_{email}", otp, timeout=300)  # Store in cache for 5 minutes
+
+    # Send OTP email
+    send_mail(
+        subject="Your OTP Code",
+        message = f"Your OTP is:\n\n{otp}\n\nIt is valid for 5 minutes.",
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=[email],
+        fail_silently=False,
+    )
+
+    return Response({"message": "OTP sent successfully!"})
+
+# API to verify OTP
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def verify_otp(request):
+    email = request.data.get("email")
+    otp_entered = request.data.get("otp")
+
+    if not email or not otp_entered:
+        return Response({"error": "Email and OTP are required"}, status=400)
+
+    otp_stored = cache.get(f"otp_{email}")  # Retrieve OTP from cache
+
+    if otp_stored and otp_stored == otp_entered:
+        cache.delete(f"otp_{email}")  # Remove OTP after successful verification
+        return Response({"success": "OTP verified successfully!"})
+
+    return Response({"error": "Invalid or expired OTP"}, status=400)

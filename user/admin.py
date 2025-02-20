@@ -28,4 +28,3 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
     followers_list.short_description = 'Followers List'  # Set column name in admin
-
