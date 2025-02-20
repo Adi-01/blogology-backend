@@ -226,7 +226,7 @@ def send_otp(request):
 
     return Response({"message": "OTP sent successfully!"})
 
-# API to verify OTP
+# API to verify the OTP
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def verify_otp(request):
