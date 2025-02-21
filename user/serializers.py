@@ -21,11 +21,12 @@ def validate_email_uniqueness(value, instance=None):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'password', 'image', 'about_me' ]
+        fields = ['id', 'username', 'email', 'password', 'image', 'about_me','is_admin' ]
         extra_kwargs = {
             'password': {'write_only': True},
             'image': {'read_only': True},
-            'about_me':{'read_only': True}
+            'about_me':{'read_only': True},
+            'is_admin':{'read_only':True}
         }
 
     def validate_password(self, value):
@@ -56,7 +57,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'image', 'date_joined','about_me', 'post_count', 'posts', 'followers_count', 'followers_list', 'is_following']
+        fields = ['id', 'username', 'email', 'image', 'date_joined','about_me', 'post_count', 'posts', 'followers_count', 'followers_list', 'is_following','is_admin']
         extra_kwargs = {
             'about_me': {'read_only': True},
         }
@@ -99,6 +100,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             'username': {'required': False},
             'image': {'required': False},
             'about_me': {'required': False},
+            'is_admin':{'read_only':True},
         }
 
     def validate_email(self, value):

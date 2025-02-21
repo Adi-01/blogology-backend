@@ -12,7 +12,7 @@ class CustomUserAdmin(admin.ModelAdmin):
             'fields': ('followers_count', 'followers_list'),  # Add followers fields here
             'classes': ('collapse',),  # Optional: make this section collapsible
         }),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
+        ('Permissions', {'fields': ('is_admin','is_staff', 'is_active')}),
     )
     readonly_fields = ['followers_count', 'followers_list']  # Make these fields read-only
 

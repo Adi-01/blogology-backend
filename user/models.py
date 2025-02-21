@@ -48,6 +48,8 @@ class CustomUser(AbstractUser):
 
     followers = models.ManyToManyField('self', symmetrical=False, related_name='following', blank=True)
     
+    is_admin = models.BooleanField(default=False)
+    
 
 
     def clean(self):
